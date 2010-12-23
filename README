@@ -1,0 +1,11 @@
+
+This package contains the code you need for making your own
+applications that control Pololu Maestro USB Devices.  All of the code
+uses the devices' native USB interfaces.
+
+The supported devices are:
+
+  - Micro Maestro 6-Channel USB Servo Controller (#1350, #1351)
+  - Mini Maestro 12-Channel USB Servo Controller (#1352, #1353)
+  - Mini Maestro 18-Channel USB Servo Controller (#1354, #1355)
+  - Mini Maestro 24-Channel USB Servo Controller (#1356, #1357)

@@ -1,8 +1,14 @@
 #ifndef QXCHANNEL_H
 #define QXCHANNEL_H
 
-#include <QtGui>
+#include <QObject>
+
 #include <libusc.h>
+
+class QTableWidget;
+class QComboBox;
+class QSlider;
+class QSpinBox;
 
 class QxChannelStatus : public QObject
 {

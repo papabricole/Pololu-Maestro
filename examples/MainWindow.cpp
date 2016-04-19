@@ -2,9 +2,10 @@
 #include "QxChannelStatus.h"
 #include "ConfigurationFile.h"
 
-#include <QtGui/QtGui>
-
-
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QToolBar>
+#include <QComboBox>
 
 MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
@@ -36,8 +37,8 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
 
     statusTableWidget->setAlternatingRowColors(true);
     statusTableWidget->setRowCount(numChannels);
-    statusTableWidget->horizontalHeader()->setResizeMode(QHeaderView::ResizeToContents);
-    statusTableWidget->horizontalHeader()->setResizeMode(1, QHeaderView::Stretch);
+    statusTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    statusTableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
 
     for (int i = 0; i < numChannels; ++i)
     {

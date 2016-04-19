@@ -1,5 +1,9 @@
 #include "QxChannelStatus.h"
 
+#include <QTableWidget>
+#include <QComboBox>
+#include <QSpinBox>
+
 QxChannelStatus::QxChannelStatus(libusc_device* device, int index, QTableWidget* parent) :
         QObject(parent),
         m_tableWidget(parent),

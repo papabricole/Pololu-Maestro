@@ -1,6 +1,6 @@
 
-Maestro
-=======
+Pololu Maestro USB Servo Controller library for Windows, Linux, and macOS
+=========================================================================
 
 ![C/C++ CI](https://github.com/papabricole/Pololu-Maestro/workflows/C/C++%20CI/badge.svg)
 [![GitHub Releases](https://img.shields.io/github/release/papabricole/Pololu-Maestro.svg)](https://github.com/papabricole/Pololu-Maestro/releases)
@@ -38,9 +38,9 @@ The supported devices are:
     
     std::vector<MaestroDevice> devices = MaestroDevice::getConnectedDevices();
     
-    devices[0].setAcceleration(0, 4) # set servo 0 acceleration to 4
-    devices[0].setTarget(0, 6000)    # set servo to move to center position
-    devices[0].setSpeed(1, 10)       # set servo 1 speed to 10
+    devices[0].setAcceleration(0, 4); // set servo 0 acceleration to 4
+    devices[0].setTarget(0, 6000);    // set servo to move to center position
+    devices[0].setSpeed(1, 10);       // set servo 1 speed to 10
 
 ### Python
 

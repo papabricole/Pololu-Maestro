@@ -2,6 +2,7 @@
 
 #include <libusb.h>
 
+#include <array>
 #include <stdexcept>
 #include <string>
 
@@ -10,31 +11,7 @@
 #undef IGNORE
 #endif
 
-enum libusc_request : uint8_t {
-    REQUEST_GET_PARAMETER = 0x81,
-    REQUEST_SET_PARAMETER = 0x82,
-    REQUEST_GET_VARIABLES = 0x83,
-    REQUEST_SET_SERVO_VARIABLE = 0x84,
-    REQUEST_SET_TARGET = 0x85,
-    REQUEST_CLEAR_ERRORS = 0x86,
-    REQUEST_GET_SERVO_SETTINGS = 0x87,
-
-    // GET STACK and GET CALL STACK are only used on the Mini Maestro.
-    REQUEST_GET_STACK = 0x88,
-    REQUEST_GET_CALL_STACK = 0x89,
-    REQUEST_SET_PWM = 0x8A,
-
-    REQUEST_REINITIALIZE = 0x90,
-    REQUEST_ERASE_SCRIPT = 0xA0,
-    REQUEST_WRITE_SCRIPT = 0xA1,
-    REQUEST_SET_SCRIPT_DONE = 0xA2,  // value.low.b is 0 for go, 1 for stop, 2 for single-step
-    REQUEST_RESTART_SCRIPT_AT_SUBROUTINE = 0xA3,
-    REQUEST_RESTART_SCRIPT_AT_SUBROUTINE_WITH_PARAMETER = 0xA4,
-    REQUEST_RESTART_SCRIPT = 0xA5,
-    REQUEST_START_BOOTLOADER = 0xFF,
-};
-
-enum Parameter : uint8_t {
+enum MaestroDevice::Parameter : uint8_t {
     PARAMETER_INITIALIZED = 0,               // 1 byte - 0 or 0xFF
     PARAMETER_SERVOS_AVAILABLE = 1,          // 1 byte - 0-5
     PARAMETER_SERVO_PERIOD = 2,              // 1 byte - ticks allocated to each servo/256
@@ -111,13 +88,38 @@ enum Parameter : uint8_t {
     PARAMETER_SERVO5_ACCELERATION = 83,  // 1 byte (speed changes that much every 10ms)
 };
 
+namespace {
+enum libusc_request : uint8_t {
+    REQUEST_GET_PARAMETER = 0x81,
+    REQUEST_SET_PARAMETER = 0x82,
+    REQUEST_GET_VARIABLES = 0x83,
+    REQUEST_SET_SERVO_VARIABLE = 0x84,
+    REQUEST_SET_TARGET = 0x85,
+    REQUEST_CLEAR_ERRORS = 0x86,
+    REQUEST_GET_SERVO_SETTINGS = 0x87,
+
+    // GET STACK and GET CALL STACK are only used on the Mini Maestro.
+    REQUEST_GET_STACK = 0x88,
+    REQUEST_GET_CALL_STACK = 0x89,
+    REQUEST_SET_PWM = 0x8A,
+
+    REQUEST_REINITIALIZE = 0x90,
+    REQUEST_ERASE_SCRIPT = 0xA0,
+    REQUEST_WRITE_SCRIPT = 0xA1,
+    REQUEST_SET_SCRIPT_DONE = 0xA2,  // value.low.b is 0 for go, 1 for stop, 2 for single-step
+    REQUEST_RESTART_SCRIPT_AT_SUBROUTINE = 0xA3,
+    REQUEST_RESTART_SCRIPT_AT_SUBROUTINE_WITH_PARAMETER = 0xA4,
+    REQUEST_RESTART_SCRIPT = 0xA5,
+    REQUEST_START_BOOTLOADER = 0xFF,
+};
+
 struct Range {
     uint8_t bytes;
     int minimumValue;
     int maximumValue;
 };
 
-Range getRange(Parameter parameterId) {
+Range getRange(MaestroDevice::Parameter parameterId) {
     // const libusc_range u32 = {4, 0, 0x7FFFFFFF};
     const Range u16 = {2, 0, 0xFFFF};
     // const libusc_range u12 = {2, 0, 0x0FFF};
@@ -131,60 +133,59 @@ Range getRange(Parameter parameterId) {
     const Range u50 = {1, 1, 50};
 
     switch (parameterId) {
-        case PARAMETER_INITIALIZED:
-        case PARAMETER_SERVOS_AVAILABLE:
-        case PARAMETER_SERVO_PERIOD:
-        case PARAMETER_MINI_MAESTRO_SERVO_PERIOD_L:
-        case PARAMETER_SERVO_MULTIPLIER:
-        case PARAMETER_CHANNEL_MODES_0_3:
-        case PARAMETER_CHANNEL_MODES_4_7:
-        case PARAMETER_CHANNEL_MODES_8_11:
-        case PARAMETER_CHANNEL_MODES_12_15:
-        case PARAMETER_CHANNEL_MODES_16_19:
-        case PARAMETER_CHANNEL_MODES_20_23:
-        case PARAMETER_ENABLE_PULLUPS:
+        case MaestroDevice::PARAMETER_INITIALIZED:
+        case MaestroDevice::PARAMETER_SERVOS_AVAILABLE:
+        case MaestroDevice::PARAMETER_SERVO_PERIOD:
+        case MaestroDevice::PARAMETER_MINI_MAESTRO_SERVO_PERIOD_L:
+        case MaestroDevice::PARAMETER_SERVO_MULTIPLIER:
+        case MaestroDevice::PARAMETER_CHANNEL_MODES_0_3:
+        case MaestroDevice::PARAMETER_CHANNEL_MODES_4_7:
+        case MaestroDevice::PARAMETER_CHANNEL_MODES_8_11:
+        case MaestroDevice::PARAMETER_CHANNEL_MODES_12_15:
+        case MaestroDevice::PARAMETER_CHANNEL_MODES_16_19:
+        case MaestroDevice::PARAMETER_CHANNEL_MODES_20_23:
+        case MaestroDevice::PARAMETER_ENABLE_PULLUPS:
             return u8;
-        case PARAMETER_MINI_MAESTRO_SERVO_PERIOD_HU:
-        case PARAMETER_SERIAL_TIMEOUT:
-        case PARAMETER_SERIAL_FIXED_BAUD_RATE:
-        case PARAMETER_SCRIPT_CRC:
+        case MaestroDevice::PARAMETER_MINI_MAESTRO_SERVO_PERIOD_HU:
+        case MaestroDevice::PARAMETER_SERIAL_TIMEOUT:
+        case MaestroDevice::PARAMETER_SERIAL_FIXED_BAUD_RATE:
+        case MaestroDevice::PARAMETER_SCRIPT_CRC:
             return u16;
-        case PARAMETER_SERIAL_MODE:
+        case MaestroDevice::PARAMETER_SERIAL_MODE:
             return u2;
-        case PARAMETER_SERIAL_BAUD_DETECT_TYPE:
-        case PARAMETER_SERIAL_NEVER_SUSPEND:
-        case PARAMETER_SERIAL_ENABLE_CRC:
-        case PARAMETER_SCRIPT_DONE:
+        case MaestroDevice::PARAMETER_SERIAL_BAUD_DETECT_TYPE:
+        case MaestroDevice::PARAMETER_SERIAL_NEVER_SUSPEND:
+        case MaestroDevice::PARAMETER_SERIAL_ENABLE_CRC:
+        case MaestroDevice::PARAMETER_SCRIPT_DONE:
             return boolean;
-        case PARAMETER_SERIAL_DEVICE_NUMBER:
+        case MaestroDevice::PARAMETER_SERIAL_DEVICE_NUMBER:
             return u7;
-        case PARAMETER_SERIAL_MINI_SSC_OFFSET:
+        case MaestroDevice::PARAMETER_SERIAL_MINI_SSC_OFFSET:
             return offset;
         default:
             break;
     }
     // must be one of the servo parameters
-    switch ((((uint8_t)parameterId - (uint8_t)PARAMETER_SERVO0_HOME) % 9) + (uint8_t)PARAMETER_SERVO0_HOME) {
-        case PARAMETER_SERVO0_HOME:
-        case PARAMETER_SERVO0_NEUTRAL:
+    switch ((((uint8_t)parameterId - (uint8_t)MaestroDevice::PARAMETER_SERVO0_HOME) % 9) + (uint8_t)MaestroDevice::PARAMETER_SERVO0_HOME) {
+        case MaestroDevice::PARAMETER_SERVO0_HOME:
+        case MaestroDevice::PARAMETER_SERVO0_NEUTRAL:
             return u32440;  // 32640 - 200
-        case PARAMETER_SERVO0_RANGE:
+        case MaestroDevice::PARAMETER_SERVO0_RANGE:
             return u50;  // the upper limit could be adjusted
-        case PARAMETER_SERVO0_SPEED:
-        case PARAMETER_SERVO0_MAX:
-        case PARAMETER_SERVO0_MIN:
-        case PARAMETER_SERVO0_ACCELERATION:
+        case MaestroDevice::PARAMETER_SERVO0_SPEED:
+        case MaestroDevice::PARAMETER_SERVO0_MAX:
+        case MaestroDevice::PARAMETER_SERVO0_MIN:
+        case MaestroDevice::PARAMETER_SERVO0_ACCELERATION:
             return u8;
     }
 
     return u8;
 }
 
-namespace {
-Parameter specifyServo(Parameter p, uint8_t servo) {
+MaestroDevice::Parameter specifyServo(MaestroDevice::Parameter p, uint8_t servo) {
     const uint8_t servoParameterBytes = 9;
 
-    return Parameter(uint8_t(p) + servo * servoParameterBytes);
+    return MaestroDevice::Parameter(uint8_t(p) + servo * servoParameterBytes);
 }
 
 uint16_t exponentialSpeedToNormalSpeed(uint8_t exponentialSpeed) {
@@ -264,9 +265,50 @@ void requireArgumentRange(uint32_t argumentValue, uint32_t minimum, uint32_t max
 }
 }  // namespace
 
+class MaestroDevice::usb_device {
+   public:
+    usb_device(std::shared_ptr<libusb_context> context, libusb_device* device) : m_context(context), m_device(device) { libusb_ref_device(m_device); }
+    ~usb_device() {
+        close();
+        libusb_unref_device(m_device);
+    }
+    void open() {
+        if (!m_deviceHandle) {
+            libusb_open(m_device, &m_deviceHandle);
+        }
+    }
+    void close() { libusb_close(m_deviceHandle); }
+
+    uint32_t controlTransfer(uint8_t RequestType, uint8_t Request, uint16_t Value, uint16_t Index, uint8_t* data = nullptr, uint16_t length = 0) {
+        open();
+
+        const int ret = libusb_control_transfer(m_deviceHandle, RequestType, Request, Value, Index, data, length, 5000);
+        switch (ret) {
+            case LIBUSB_ERROR_TIMEOUT:
+                throw "the transfer timed out";
+            case LIBUSB_ERROR_PIPE:
+                throw "the control request was not supported by the device";
+            case LIBUSB_ERROR_NO_DEVICE:
+                throw "the device has been disconnected";
+            case LIBUSB_ERROR_BUSY:
+                throw "called from event handling context";
+            case LIBUSB_ERROR_INVALID_PARAM:
+                throw "the transfer size is larger than the operating system and/or hardware can support";
+            default:
+                break;
+        }
+        return ret;
+    }
+
+   private:
+    std::shared_ptr<libusb_context> m_context = nullptr;
+    libusb_device* m_device = nullptr;
+    libusb_device_handle* m_deviceHandle = nullptr;
+};
+
 std::vector<MaestroDevice> MaestroDevice::getConnectedDevices() {
     const uint16_t vendorID = 0x1ffb;
-    const uint16_t productIDArray[] = {0x0089, 0x008a, 0x008b, 0x008c};
+    const std::array<uint16_t, 4> productIDArray = {0x0089, 0x008a, 0x008b, 0x008c};
 
     std::shared_ptr<libusb_context> sharedContext(nullptr, [=](libusb_context* ctx) { libusb_exit(ctx); });
 
@@ -288,11 +330,10 @@ std::vector<MaestroDevice> MaestroDevice::getConnectedDevices() {
         }
 
         if (desc.idVendor == vendorID) {
-            for (int j = 0; j < (int)sizeof(productIDArray); j++) {
-                if (desc.idProduct == productIDArray[j]) {
-                    std::shared_ptr<libusb_device> device(devs[i], [=](libusb_device* dev) { libusb_unref_device(dev); });
-                    libusb_ref_device(devs[i]);
-                    list.push_back(MaestroDevice(sharedContext, device, desc.idProduct));
+            for (int productID : productIDArray) {
+                if (desc.idProduct == productID) {
+                    usb_device* device = new usb_device(sharedContext, devs[i]);
+                    list.push_back(MaestroDevice(device, desc.idProduct));
                 }
             }
         }
@@ -302,8 +343,7 @@ std::vector<MaestroDevice> MaestroDevice::getConnectedDevices() {
     return list;
 }
 
-MaestroDevice::MaestroDevice(std::shared_ptr<libusb_context> context, std::shared_ptr<libusb_device> device, uint16_t productId)
-    : m_context(context), m_device(device), m_productID(productId) {
+MaestroDevice::MaestroDevice(usb_device* device, uint16_t productId) : m_productID(productId), m_dev(device) {
     switch (m_productID) {
         case 0x89:
             m_channelcnt = 6;
@@ -330,7 +370,7 @@ MaestroDevice::~MaestroDevice() {}
 
 void MaestroDevice::setTarget(uint8_t servo, uint16_t value) {
     try {
-        controlTransfer(0x40, REQUEST_SET_TARGET, value, servo);
+        m_dev->controlTransfer(0x40, REQUEST_SET_TARGET, value, servo);
     } catch (std::exception& e) {
         throw "Failed to set target of servo " + std::to_string(servo) + " to " + std::to_string(value) + ".";
     }
@@ -338,7 +378,7 @@ void MaestroDevice::setTarget(uint8_t servo, uint16_t value) {
 
 void MaestroDevice::setSpeed(uint8_t servo, uint16_t value) {
     try {
-        controlTransfer(0x40, REQUEST_SET_SERVO_VARIABLE, value, servo);
+        m_dev->controlTransfer(0x40, REQUEST_SET_SERVO_VARIABLE, value, servo);
     } catch (std::exception& e) {
         throw "Failed to set speed of servo " + std::to_string(servo) + " to " + std::to_string(value) + ".";
     }
@@ -347,7 +387,7 @@ void MaestroDevice::setSpeed(uint8_t servo, uint16_t value) {
 void MaestroDevice::setAcceleration(uint8_t servo, uint16_t value) {
     // set the high bit of servo to specify acceleration
     try {
-        controlTransfer(0x40, REQUEST_SET_SERVO_VARIABLE, value, servo | 0x80);
+        m_dev->controlTransfer(0x40, REQUEST_SET_SERVO_VARIABLE, value, servo | 0x80);
     } catch (std::exception& e) {
         throw "Failed to set acceleration of servo " + std::to_string(servo) + " to " + std::to_string(value) + ".";
     }
@@ -359,7 +399,7 @@ std::vector<MaestroDevice::ServoStatus> MaestroDevice::getServoStatus() {
     const uint32_t size = m_channelcnt * sizeof(ServoStatus);
     std::vector<ServoStatus> status(m_channelcnt);
 
-    const uint32_t bytesRead = controlTransfer(0xC0, REQUEST_GET_SERVO_SETTINGS, 0, 0, (uint8_t*)status.data(), size);
+    const uint32_t bytesRead = m_dev->controlTransfer(0xC0, REQUEST_GET_SERVO_SETTINGS, 0, 0, (uint8_t*)status.data(), size);
 
     if (bytesRead != size) {
         throw "Short read: " + std::to_string(bytesRead) + " < " + std::to_string(size) + ".";
@@ -374,7 +414,7 @@ void MaestroDevice::restoreDefaultConfiguration() {
 
 MaestroDevice::DeviceSettings MaestroDevice::getDeviceSettings() {
     uint8_t buffer[14];
-    controlTransfer(0x80, 6, 0x0100, 0x0000, buffer, 14);
+    m_dev->controlTransfer(0x80, 6, 0x0100, 0x0000, buffer, 14);
 
     DeviceSettings settings;
     settings.firmwareVersionMinor = uint8_t((buffer[12] & 0xF) + (buffer[12] >> 4 & 0xF) * 10);
@@ -528,7 +568,7 @@ void MaestroDevice::setChannelSettings(uint8_t channel, const ChannelSettings& s
 /// Erases the entire script and subroutine address table from the devices.
 void MaestroDevice::eraseScript() {
     try {
-        controlTransfer(0x40, REQUEST_ERASE_SCRIPT, 0, 0);
+        m_dev->controlTransfer(0x40, REQUEST_ERASE_SCRIPT, 0, 0);
     } catch (std::exception& e) {
         throw "There was an error erasing the script.";
     }
@@ -536,7 +576,7 @@ void MaestroDevice::eraseScript() {
 
 void MaestroDevice::restartScriptAtSubroutine(uint8_t subroutine) {
     try {
-        controlTransfer(0x40, REQUEST_RESTART_SCRIPT_AT_SUBROUTINE, 0, subroutine);
+        m_dev->controlTransfer(0x40, REQUEST_RESTART_SCRIPT_AT_SUBROUTINE, 0, subroutine);
     } catch (std::exception& e) {
         throw "There was an error restarting the script at subroutine " + std::to_string(subroutine) + ".";
     }
@@ -544,7 +584,7 @@ void MaestroDevice::restartScriptAtSubroutine(uint8_t subroutine) {
 
 void MaestroDevice::restartScriptAtSubroutineWithParameter(uint8_t subroutine, uint16_t parameter) {
     try {
-        controlTransfer(0x40, REQUEST_RESTART_SCRIPT_AT_SUBROUTINE_WITH_PARAMETER, parameter, subroutine);
+        m_dev->controlTransfer(0x40, REQUEST_RESTART_SCRIPT_AT_SUBROUTINE_WITH_PARAMETER, parameter, subroutine);
     } catch (std::exception& e) {
         throw "There was an error restarting the script with a parameter at subroutine " + std::to_string(subroutine) + ".";
     }
@@ -552,7 +592,7 @@ void MaestroDevice::restartScriptAtSubroutineWithParameter(uint8_t subroutine, u
 
 void MaestroDevice::restartScript() {
     try {
-        controlTransfer(0x40, REQUEST_RESTART_SCRIPT, 0, 0);
+        m_dev->controlTransfer(0x40, REQUEST_RESTART_SCRIPT, 0, 0);
     } catch (std::exception& e) {
         throw "There was an error restarting the script.";
     }
@@ -560,7 +600,7 @@ void MaestroDevice::restartScript() {
 
 void MaestroDevice::setScriptDone(uint8_t value) {
     try {
-        controlTransfer(0x40, REQUEST_SET_SCRIPT_DONE, value, 0);
+        m_dev->controlTransfer(0x40, REQUEST_SET_SCRIPT_DONE, value, 0);
     } catch (std::exception& e) {
         throw "There was an error setting the script done.";
     }
@@ -568,7 +608,7 @@ void MaestroDevice::setScriptDone(uint8_t value) {
 
 void MaestroDevice::startBootloader() {
     try {
-        controlTransfer(0x40, REQUEST_START_BOOTLOADER, 0, 0);
+        m_dev->controlTransfer(0x40, REQUEST_START_BOOTLOADER, 0, 0);
     } catch (std::exception& e) {
         throw "There was an error entering bootloader mode.";
     }
@@ -576,7 +616,7 @@ void MaestroDevice::startBootloader() {
 
 void MaestroDevice::reinitialize() {
     try {
-        controlTransfer(0x40, REQUEST_REINITIALIZE, 0, 0);
+        m_dev->controlTransfer(0x40, REQUEST_REINITIALIZE, 0, 0);
     } catch (std::exception& e) {
         throw "There was an error re-initializing the device.";
     }
@@ -584,7 +624,7 @@ void MaestroDevice::reinitialize() {
 
 void MaestroDevice::clearErrors() {
     try {
-        controlTransfer(0x40, REQUEST_CLEAR_ERRORS, 0, 0);
+        m_dev->controlTransfer(0x40, REQUEST_CLEAR_ERRORS, 0, 0);
     } catch (std::exception& e) {
         throw "There was a USB communication error while clearing the servo errors.";
     }
@@ -603,14 +643,14 @@ void MaestroDevice::writeScript(const std::vector<uint8_t>& bytecode) {
         }
 
         try {
-            controlTransfer(0x40, REQUEST_WRITE_SCRIPT, 0, block, block_bytes);
+            m_dev->controlTransfer(0x40, REQUEST_WRITE_SCRIPT, 0, block, block_bytes);
         } catch (std::exception& e) {
             throw "There was an error writing script block " + std::to_string(block) + ".";
         }
     }
 }
 
-void MaestroDevice::setPWM(uint16_t dutyCycle, uint16_t period) { controlTransfer(0x40, REQUEST_SET_PWM, dutyCycle, period); }
+void MaestroDevice::setPWM(uint16_t dutyCycle, uint16_t period) { m_dev->controlTransfer(0x40, REQUEST_SET_PWM, dutyCycle, period); }
 
 void MaestroDevice::disablePWM() {
     if (m_productID == 0x008a)
@@ -619,38 +659,13 @@ void MaestroDevice::disablePWM() {
         setTarget(12, 0);
 }
 
-uint32_t MaestroDevice::controlTransfer(uint8_t RequestType, uint8_t Request, uint16_t Value, uint16_t Index, uint8_t* data, uint16_t length) {
-    if (!m_deviceHandle) {
-        libusb_device_handle* dev_handle = nullptr;
-        libusb_open(m_device.get(), &dev_handle);
-        m_deviceHandle = std::shared_ptr<libusb_device_handle>(dev_handle, [=](libusb_device_handle* dev_handle) { libusb_close(dev_handle); });
-    }
-
-    const int ret = libusb_control_transfer(m_deviceHandle.get(), RequestType, Request, Value, Index, data, length, 5000);
-    switch (ret) {
-        case LIBUSB_ERROR_TIMEOUT:
-            throw "the transfer timed out";
-        case LIBUSB_ERROR_PIPE:
-            throw "the control request was not supported by the device";
-        case LIBUSB_ERROR_NO_DEVICE:
-            throw "the device has been disconnected";
-        case LIBUSB_ERROR_BUSY:
-            throw "called from event handling context";
-        case LIBUSB_ERROR_INVALID_PARAM:
-            throw "the transfer size is larger than the operating system and/or hardware can support";
-        default:
-            break;
-    }
-    return ret;
-}
-
 uint16_t MaestroDevice::getRawParameter(Parameter parameter) {
     const Range range = getRange(parameter);
     uint16_t value = 0;
     uint16_t buffer;
 
     try {
-        controlTransfer(0xC0, REQUEST_GET_PARAMETER, 0, parameter, (uint8_t*)&buffer, range.bytes);
+        m_dev->controlTransfer(0xC0, REQUEST_GET_PARAMETER, 0, parameter, (uint8_t*)&buffer, range.bytes);
     } catch (std::exception& e) {
         throw "There was an error getting parameter from the device.";
     }
@@ -677,7 +692,7 @@ void MaestroDevice::setRawParameter(Parameter parameter, uint16_t value) {
 void MaestroDevice::setRawParameterNoChecks(uint16_t parameter, uint16_t value, int bytes) {
     uint16_t index = (uint16_t)((bytes << 8) + parameter);  // high bytes = # of bytes
     try {
-        controlTransfer(0x40, REQUEST_SET_PARAMETER, value, index);
+        m_dev->controlTransfer(0x40, REQUEST_SET_PARAMETER, value, index);
     } catch (std::exception& e) {
         throw "There was an error setting parameter on the device.";
     }

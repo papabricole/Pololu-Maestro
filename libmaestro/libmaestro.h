@@ -13,10 +13,10 @@
 #include <string>
 #include <vector>
 
-enum Parameter : uint8_t;
-
 class MaestroDevice {
    public:
+    enum Parameter : uint8_t;
+
     enum class SerialMode {
         /// On the Command Port, user can send commands and receive responses.
         /// TTL port/UART are connected to make a USB-to-serial adapter.</summary>
@@ -217,7 +217,7 @@ class MaestroDevice {
 
     /**
      * @brief Sets the target of the servo on channelNumber.
-     * 
+     *
      * If the channel is configured as a servo, then the target represents the
      * pulse width to transmit in units of quarter-microseconds. A \a target
      * value of 0 tells the Maestro to stop sending pulses to the servo.
@@ -230,18 +230,18 @@ class MaestroDevice {
      * @param target        A number from 0 to 16383.
      */
     void setTarget(uint8_t channelNumber, uint16_t target);
-   
-    /** 
+
+    /**
      * @brief Sets the \a speed limit of \a channelNumber.
      *
      * Limits the speed a servo channel’s output value changes.
      *
      * @param channelNumber A servo number from 0 to 127.
-     * @param speed A number from 0 to 16383. 
-     */   
+     * @param speed A number from 0 to 16383.
+     */
     void setSpeed(uint8_t channelNumber, uint16_t target);
-   
-     /** 
+
+    /**
      * @brief Sets the \a acceleration limit of \a channelNumber.
      *
      * Limits the acceleration a servo channel’s output value changes.
@@ -250,7 +250,7 @@ class MaestroDevice {
      * @param acceleration A number from 0 to 16383.
      */
     void setAcceleration(uint8_t channelNumber, uint16_t target);
-   
+
     std::vector<ServoStatus> getServoStatus();
 
     void restoreDefaultConfiguration();
@@ -262,8 +262,8 @@ class MaestroDevice {
     void setChannelSettings(uint8_t channel, const ChannelSettings &settings);
 
     void eraseScript();
-   
-    /** 
+
+    /**
      * @brief Starts loaded script at specified \a subroutineNumber location.
      *
      * Starts the loaded script at location specified by the subroutine number.
@@ -274,8 +274,8 @@ class MaestroDevice {
      * @param subroutineNumber A subroutine number defined in script's compiled code.
      */
     void restartScriptAtSubroutine(uint8_t subroutineNumber);
-   
-    /** 
+
+    /**
      * @brief Starts loaded script at specified \a subroutineNumber location after loading \a parameter on to the stack.
      *
      * Similar to the \p restartScript function, except it loads the parameter
@@ -292,7 +292,7 @@ class MaestroDevice {
     void clearErrors();
     void writeScript(const std::vector<uint8_t> &bytecode);
 
-    /** 
+    /**
      * @brief Sets the PWM specified by \a onTime and \a period in units of 1/48 microseconds.
      *
      * Sets the PWM output to the specified dutyCycle and period, in units of 1/48
@@ -308,9 +308,9 @@ class MaestroDevice {
     static std::vector<MaestroDevice> getConnectedDevices();
 
    private:
-    MaestroDevice(std::shared_ptr<struct libusb_context> context, std::shared_ptr<struct libusb_device> device, uint16_t productID);
+    class usb_device;
+    MaestroDevice(usb_device *device, uint16_t productID);
 
-    uint32_t controlTransfer(uint8_t RequestType, uint8_t Request, uint16_t Value, uint16_t Index, uint8_t *data = nullptr, uint16_t length = 0);
     uint16_t getRawParameter(Parameter parameter);
     void setRawParameter(Parameter parameter, uint16_t value);
     void setRawParameterNoChecks(uint16_t parameter, uint16_t value, int bytes);
@@ -320,7 +320,5 @@ class MaestroDevice {
     std::string m_name;
     int m_channelcnt;
 
-    std::shared_ptr<struct libusb_context> m_context = nullptr;
-    std::shared_ptr<struct libusb_device> m_device = nullptr;
-    std::shared_ptr<struct libusb_device_handle> m_deviceHandle = nullptr;
+    std::shared_ptr<usb_device> m_dev = nullptr;
 };

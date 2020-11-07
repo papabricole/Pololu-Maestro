@@ -34,13 +34,13 @@ The supported devices are:
 
 ### C++
 
-    #include <libmaestro.h>
+    #include <maestro/Device.h>
     
-    std::vector<MaestroDevice> devices = MaestroDevice::getConnectedDevices();
-    
-    devices[0].setAcceleration(0, 4); // set servo 0 acceleration to 4
-    devices[0].setTarget(0, 6000);    // set servo to move to center position
-    devices[0].setSpeed(1, 10);       // set servo 1 speed to 10
+    std::vector<Maestro::Device> devices = Maestro::Device::getConnectedDevices();
+
+    devices[0].setAcceleration(0, 4);  // set servo 0 acceleration to 4
+    devices[0].setTarget(0, 6000);     // set servo to move to center position
+    devices[0].setSpeed(1, 10);        // set servo 1 speed to 10
 
 ### Python
 
@@ -62,3 +62,11 @@ The supported devices are:
     device.setAcceleration(0, 4) # set servo 0 acceleration to 4
     device.setTarget(0, 6000)    # set servo to move to center position
     device.setSpeed(1, 10)       # set servo 1 speed to 10
+
+    # compile and upload a script
+    with open('blink.txt', 'r') as content_file:
+        script = content_file.read()
+
+    program = maestro.Program(script=script, isMiniMaestro=False)
+
+    device.writeScript(program.getByteList())

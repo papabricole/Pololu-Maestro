@@ -34,7 +34,7 @@ execute_process(
 )
 message(STATUS "VERSION: ${MAESTRO_VERSION}")
 
-add_subdirectory(libmaestro)
+add_subdirectory(src)
 
 if(PYTHON_BINDING)
     add_subdirectory(python)

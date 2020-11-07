@@ -1,4 +1,4 @@
-/*! \file PololuMaestro.h
+/*! \file Device.h
  *
  * This is the main header file for the Pololu Maestro Servo Controller library.
  *
@@ -13,7 +13,8 @@
 #include <string>
 #include <vector>
 
-class MaestroDevice {
+namespace Maestro {
+class Device {
    public:
     enum Parameter : uint8_t;
 
@@ -210,7 +211,7 @@ class MaestroDevice {
     };
 #pragma pack(pop)
 
-    ~MaestroDevice();
+    ~Device();
 
     const std::string &getName() const { return m_name; }
     int getNumChannels() const { return m_channelcnt; }
@@ -305,11 +306,11 @@ class MaestroDevice {
     void disablePWM();
 
     /// Enumerate the Maestro devices.
-    static std::vector<MaestroDevice> getConnectedDevices();
+    static std::vector<Device> getConnectedDevices();
 
    private:
     class usb_device;
-    MaestroDevice(usb_device *device, uint16_t productID);
+    Device(usb_device *device, uint16_t productID);
 
     uint16_t getRawParameter(Parameter parameter);
     void setRawParameter(Parameter parameter, uint16_t value);
@@ -322,3 +323,4 @@ class MaestroDevice {
 
     std::shared_ptr<usb_device> m_dev = nullptr;
 };
+}  // namespace Maestro

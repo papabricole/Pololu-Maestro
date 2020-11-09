@@ -8,7 +8,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
-pybind11_add_module(pymaestro maestro.cpp)
+pybind11_add_module(pymaestro maestro.cpp example.py)
 target_link_libraries(pymaestro PRIVATE maestro)
 set_target_properties(pymaestro PROPERTIES FOLDER "python")
 set_target_properties(pymaestro PROPERTIES OUTPUT_NAME "maestro")

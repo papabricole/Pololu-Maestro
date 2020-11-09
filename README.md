@@ -18,6 +18,10 @@ The supported devices are:
   - Mini Maestro 18-Channel USB Servo Controller (#1354, #1355)
   - Mini Maestro 24-Channel USB Servo Controller (#1356, #1357)
 
+## Upgrading Firmware
+
+See the firmwares subdirectory for the instructions.
+
 ## Prerequisites
 
 **On all platforms**

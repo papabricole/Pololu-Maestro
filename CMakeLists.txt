@@ -35,6 +35,7 @@ execute_process(
 message(STATUS "VERSION: ${MAESTRO_VERSION}")
 
 add_subdirectory(src)
+add_subdirectory(firmwares)
 
 if(PYTHON_BINDING)
     add_subdirectory(python)
